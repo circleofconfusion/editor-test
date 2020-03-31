@@ -1,0 +1,39 @@
+:root {
+  --gray: #888;
+  --orange: rgb(255, 223, 164);
+}
+
+app-editor > div[contenteditable="true"] {
+  border: 1px solid var(--gray);
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 2em;
+  padding: .5em;
+}
+
+app-editor > div[contenteditable="true"]:focus {
+  outline: none;
+}
+
+app-editor > div[contenteditable="true"] mark {
+  background-color: var(--orange);
+}
+
+app-editor > .toolbar {
+  margin: 0;
+  padding: 0;
+}
+
+
+app-editor > .toolbar > button {
+  border: none;
+  margin: 0;
+  border-top: 1px solid var(--gray);
+  border-right: 1px solid var(--gray);
+  background-color: white;
+}
+
+app-editor > .toolbar > button:first-child {
+  border-left: 1px solid var(--gray);
+}
