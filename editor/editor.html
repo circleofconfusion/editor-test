@@ -7,5 +7,7 @@
     <i class="fa fa-comment-o" aria-hidden="true" ng-click="insertComment()"></i>
   </button>
 </div>
-<div contenteditable="true">
-  <p>{{ text }}</p></div>
+<div contenteditable
+    ng-focus="handleFocus()"
+    ng-blur="handleBlur()" 
+    ng-keyup="handleInput()"></div>

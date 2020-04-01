@@ -1,31 +1,30 @@
 (function() {
   "use strict";
 
-  angular.module('editorTest').directive('appEditor', function() {
+  angular.module('editorTest').directive('appEditor', ['$sanitize', function($sanitize) {
     return {
       scope: {
-        text: '='
+        text: '<?',
+        onsave: '&'
       },
-      restrict: 'E',
       templateUrl: '/editor/editor.html',
       link: function(scope, elem, attrs) {
         // Set all enter key presses to be new paragraphs
         document.execCommand("defaultParagraphSeparator", false, "p");
 
-        const editDiv = elem[0].querySelector('div[contentEditable="true"]');
+        const DEFAULT_TEXT = '<p>Add text...</p>';
+        const editor = elem[0].querySelector('div[contenteditable]');
+        editor.innerHTML = scope.text;
+        if (editor.innerHTML === '' || editor.innerHTML === '<p></p>') {
+          editor.innerHTML = DEFAULT_TEXT;
+        }
 
-        editDiv.addEventListener('paste', evt => {
-          const text = (evt.clipboardData || window.clipboardData)
-            .getData('text')
-            .replace(/\n/g, '</p><p>');
-
-          document.execCommand('insertHTML', false, text);
-
-          evt.preventDefault();
-        });
 
         scope.modifyDoc = modifyDoc;
         scope.insertComment = insertComment;
+        scope.handleFocus = handleFocus;
+        scope.handleBlur = handleBlur;
+        scope.handleInput = handleInput;
         
         function modifyDoc(command, value) {
           document.execCommand(command, false, value)
@@ -36,7 +35,31 @@
 
           document.execCommand('insertHTML', false, `<mark>${selectedText}</mark>`);
         }
+
+        function handleFocus() {
+          if (editor.innerHTML === DEFAULT_TEXT) {
+            editor.innerHTML = '';
+            document.execCommand('insertHtml', false, '<p></p>');
+          }
+        }
+
+        function handleBlur() {
+          console.log(editor.innerHTML);
+          if (editor.innerHTML === '' || editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>') {
+            editor.innerHTML = '';
+            document.execCommand('insertHTML', false, DEFAULT_TEXT);
+          }
+        }
+
+        // calls injected save function when user is idle for 3 seconds
+        let timeoutHandle;
+        function handleInput() {
+          clearTimeout(timeoutHandle);
+          timeoutHandle = setTimeout(() => {
+            scope.onsave({ value: $sanitize(editor.innerHTML) });
+          }, 3000);
+        }
       }
     };
-  });
+  }]);
 })()

@@ -3,20 +3,20 @@
   --orange: rgb(255, 223, 164);
 }
 
-app-editor > div[contenteditable="true"] {
+app-editor > div[contenteditable] {
   border: 1px solid var(--gray);
   display: block;
   width: 100%;
   box-sizing: border-box;
-  min-height: 2em;
+  min-height: 4.5em;
   padding: .5em;
 }
 
-app-editor > div[contenteditable="true"]:focus {
+app-editor > div[contenteditable]:focus {
   outline: none;
 }
 
-app-editor > div[contenteditable="true"] mark {
+app-editor > div[contenteditable] mark {
   background-color: var(--orange);
 }
 
