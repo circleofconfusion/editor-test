@@ -61,7 +61,13 @@
         }
 
         function handlePaste(evt) {
-          console.log(evt)
+          const paste = (event.clipboardData || window.clipboardData)
+            .getData('text')
+            .replace(/\n/g, '</p><p>');
+
+          document.execCommand('insertHTML', false, paste);
+          
+          evt.preventDefault();
         }
       }
     };
