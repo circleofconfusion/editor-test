@@ -65,7 +65,7 @@
         }
 
         function handlePaste(evt) {
-          const paste = (event.clipboardData || window.clipboardData)
+          const paste = (evt.clipboardData || window.clipboardData)
             .getData('text')
             .replace(/\n/g, '</p><p>');
 
