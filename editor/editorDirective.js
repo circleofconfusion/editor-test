@@ -13,12 +13,14 @@
         // Set all enter key presses to be new paragraphs
         document.execCommand('defaultParagraphSeparator', false, 'p');
 
-        const DEFAULT_TEXT = $sce.trustAsHtml('<p>Add text...</p>');
+        const DEFAULT_TEXT = '<p>Add text...</p>';
         const editor = elem[0].querySelector('div[contenteditable]');
 
         console.log(scope.text);
-        if (scope.text.valueOf() === '' || scope.text.valueOf() === '<p></p>') {
-          scope.text = DEFAULT_TEXT;
+        if (scope.text === '' || scope.text === '<p></p>' || scope.text === '<p><br></p>') {
+          scope.text = $sce.trustAsHtml(DEFAULT_TEXT);
+        } else {
+          scope.text = $sce.trustAsHtml(scope.text);
         }
 
         scope.modifyDoc = modifyDoc;
@@ -39,7 +41,7 @@
         }
 
         function handleFocus() {
-          if (editor.innerHTML === DEFAULT_TEXT.valueOf()) {
+          if (editor.innerHTML === DEFAULT_TEXT) {
             editor.innerHTML = '';
             document.execCommand('insertHtml', false, '<p></p>');
           }
@@ -47,7 +49,7 @@
 
         function handleBlur() {
           if (editor.innerHTML === '' || editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>') {
-            editor.innerHTML = DEFAULT_TEXT.valueOf();
+            editor.innerHTML = DEFAULT_TEXT;
           }
         }
 
@@ -56,7 +58,9 @@
         function handleInput() {
           clearTimeout(timeoutHandle);
           timeoutHandle = setTimeout(() => {
-            scope.onsave({ value: editor.innerHTML });
+            let value = editor.innerHTML;
+            if (value === DEFAULT_TEXT || value === '<p></p>' || value === '<p><br></p>') value = '';
+            scope.onsave({ value });
           }, 3000);
         }
 

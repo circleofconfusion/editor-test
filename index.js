@@ -1,10 +1,10 @@
 'use strict';
 angular.module('editorTest',['ngSanitize'])
-  .controller('main', ['$sce', function($sce) {
+  .controller('main', [ function() {
     const model = this;
 
-    model.txt1 = $sce.trustAsHtml('<p>foo</p>');
-    model.txt2 = $sce.trustAsHtml('<p></p>');
+    model.txt1 = '<p>foo</p>';
+    model.txt2 = '';
     
     model.saveHandler = saveHandler;
 
