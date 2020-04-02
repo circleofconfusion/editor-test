@@ -4,21 +4,30 @@
   <meta charset="UTF-8">
   <title>Editor Test</title>
   <link href="index.css" rel="stylesheet" type="text/css">
-  <link href="editor/editor.css" rel="stylesheet" type="text/css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+  <link href="editor/editor.css" rel="stylesheet" type="text/css">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.11/angular.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-sanitize/1.5.11/angular-sanitize.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/angular-uuid@0.0.4/angular-uuid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap-tpls.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap.min.js"></script>
   <script src="index.js"></script>
   <script src="editor/editorDirective.js"></script>
 </head>
 <body>
   <main ng-app="editorTest" ng-controller="main as model">
     <h1> Editor Test</h1>
-    <app-editor text="model.txt1" onsave="model.saveHandler(value)"></app-editor>
-    <div ng-bind-html="model.txt1"></div>
-    <app-editor text="model.txt2" onsave="model.saveHandler(value)"></app-editor>
-    <div ng-bind-html="model.txt2"></div>
+    <section>
+      <app-editor text="model.txt1" onsave="model.saveHandler(value)"></app-editor>
+      <div ng-bind-html="model.txt1"></div>
+      <app-editor text="model.txt2" onsave="model.saveHandler(value)"></app-editor>
+      <div ng-bind-html="model.txt2"></div>
+    </section>
+    <section>
+
+    </section>
   </main>
 </body>
 </html>

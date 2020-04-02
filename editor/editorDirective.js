@@ -2,7 +2,7 @@
 
   'use strict';
 
-  angular.module('editorTest').directive('appEditor', ['$sanitize', function($sanitize) {
+  angular.module('editorTest').directive('appEditor', ['$sce', function($sce) {
     return {
       scope: {
         text: '<?',
@@ -13,12 +13,12 @@
         // Set all enter key presses to be new paragraphs
         document.execCommand('defaultParagraphSeparator', false, 'p');
 
-        const DEFAULT_TEXT = '<p>Add text...</p>';
+        const DEFAULT_TEXT = $sce.trustAsHtml('<p>Add text...</p>');
         const editor = elem[0].querySelector('div[contenteditable]');
 
-        editor.innerHTML = scope.text;
-        if (editor.innerHTML === '' || editor.innerHTML === '<p></p>') {
-          editor.innerHTML = DEFAULT_TEXT;
+        console.log(scope.text);
+        if (scope.text.valueOf() === '' || scope.text.valueOf() === '<p></p>') {
+          scope.text = DEFAULT_TEXT;
         }
 
         scope.modifyDoc = modifyDoc;
@@ -34,11 +34,12 @@
 
         function insertComment() {
           const selectedText = document.getSelection().toString();
-          document.execCommand('insertHTML', false, `<mark>${selectedText}</mark>`);
+          const commentId = Math.random().toString(36).substr(2, 9);
+          document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selectedText}</mark>`);
         }
 
         function handleFocus() {
-          if (editor.innerHTML === DEFAULT_TEXT) {
+          if (editor.innerHTML === DEFAULT_TEXT.valueOf()) {
             editor.innerHTML = '';
             document.execCommand('insertHtml', false, '<p></p>');
           }
@@ -46,8 +47,7 @@
 
         function handleBlur() {
           if (editor.innerHTML === '' || editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>') {
-            editor.innerHTML = '';
-            document.execCommand('insertHTML', false, DEFAULT_TEXT);
+            editor.innerHTML = DEFAULT_TEXT.valueOf();
           }
         }
 
@@ -56,7 +56,7 @@
         function handleInput() {
           clearTimeout(timeoutHandle);
           timeoutHandle = setTimeout(() => {
-            scope.onsave({ value: $sanitize(editor.innerHTML) });
+            scope.onsave({ value: editor.innerHTML });
           }, 3000);
         }
 

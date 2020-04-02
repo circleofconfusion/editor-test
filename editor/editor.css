@@ -7,9 +7,7 @@ app-editor > div[contenteditable] {
   border: 1px solid var(--gray);
   display: block;
   width: 100%;
-  box-sizing: border-box;
-  min-height: 4.5em;
-  padding: .5em;
+  min-height: 2.5em;
 }
 
 app-editor > div[contenteditable]:focus {
@@ -20,11 +18,14 @@ app-editor > div[contenteditable] mark {
   background-color: var(--orange);
 }
 
+app-editor > div[contenteditable] p {
+  margin: 0.5em;
+}
+
 app-editor > .toolbar {
   margin: 0;
   padding: 0;
 }
-
 
 app-editor > .toolbar > button {
   border: none;
