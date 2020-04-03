@@ -7,8 +7,13 @@ angular.module('editorTest',['ngSanitize'])
     model.txt2 = '';
     
     model.saveHandler = saveHandler;
+    model.commentHandler = commentHandler;
 
     function saveHandler() {
       console.log('saveHandler', arguments);
+    }
+
+    function commentHandler() {
+      console.log('commentHandler', arguments);
     }
   }]);

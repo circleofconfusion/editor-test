@@ -8,6 +8,7 @@ app-editor > div[contenteditable] {
   display: block;
   width: 100%;
   min-height: 2.5em;
+  position: relative;
 }
 
 app-editor > div[contenteditable]:focus {
@@ -37,4 +38,17 @@ app-editor > .toolbar > button {
 
 app-editor > .toolbar > button:first-child {
   border-left: 1px solid var(--gray);
+}
+
+app-editor .comment-form {
+  display: grid;
+  width: auto;
+  position: absolute;
+  grid-template-columns: repeat(3, min-content);
+  border: 1px solid var(--gray);
+}
+
+app-editor .comment-form button {
+  border: none;
+  background-color: #fff;
 }
