@@ -1,10 +1,16 @@
-<div class="toolbar">
+<div class="toolbar" ng-if="showToolbar">
   <button type="button" title="Undo" ng-click="modifyDoc('undo')">
     <i class="fa fa-undo" aria-hidden="true"></i>
   </button><button type="button" title="Redo" ng-click="modifyDoc('redo')">
     <i class="fa fa-repeat" aria-hidden="true"></i>
   </button><button type="button" title="comment">
     <i class="fa fa-comment-o" aria-hidden="true" ng-click="insertComment()"></i>
+  </button>
+</div>
+<div class="heading">
+  <h5 ng-bind="editorTitle"></h5>
+  <button type="button" ng-click="closeEditor()">
+    <i class="fa fa-times"></i>
   </button>
 </div>
 <div contenteditable

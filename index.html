@@ -21,8 +21,14 @@
   <main ng-app="editorTest" ng-controller="main as model">
     <h1> Editor Test</h1>
     <section>
-      <app-editor text="model.txt1" onsave="model.saveHandler(value)" onsavecomment="model.commentHandler(commentId, commentText)"></app-editor>
-      <app-editor text="model.txt2" onsave="model.saveHandler(value)" onsavecomment="model.commentHandler(commentId, commentText)"></app-editor>
+      <app-editor text="model.txt1"
+          editor-title="Editor 1"
+          onsave="model.saveHandler(value)"
+          onsavecomment="model.commentHandler(commentId, commentText)"></app-editor>
+      <app-editor text="model.txt2"
+          editor-title="Editor 1"
+          onsave="model.saveHandler(value)"
+          onsavecomment="model.commentHandler(commentId, commentText)"></app-editor>
     </section>
     <section>
 

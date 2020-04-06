@@ -3,6 +3,11 @@
   --orange: rgb(255, 223, 164);
 }
 
+app-editor {
+  margin: 10px 0;
+  display: block;
+}
+
 app-editor > div[contenteditable] {
   border: 1px solid var(--gray);
   display: block;
@@ -26,7 +31,9 @@ app-editor > div[contenteditable] p {
 app-editor > .toolbar {
   margin: 0;
   padding: 0;
+  position: absolute;
 }
+
 
 app-editor > .toolbar > button {
   border: none;
@@ -38,6 +45,26 @@ app-editor > .toolbar > button {
 
 app-editor > .toolbar > button:first-child {
   border-left: 1px solid var(--gray);
+}
+
+app-editor > .heading {
+  display: grid;
+  grid-template-columns: 1fr min-content;
+}
+
+app-editor > .heading > h5 {
+  margin: 0;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+app-editor > .heading > button {
+  border: none;
+  margin: 0;
+  border-top: 1px solid var(--gray);
+  border-right: 1px solid var(--gray);
+  border-left: 1px solid var(--gray);
+  background-color: white;
 }
 
 app-editor .comment-form {
