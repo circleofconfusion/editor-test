@@ -55,6 +55,7 @@
             selectionBoundingRect.y - editor.offsetTop
           );
           editor.appendChild(commentForm);
+          commentForm.querySelector('textarea').focus();
           
           editor.addEventListener('save', saveComment);
           
@@ -128,11 +129,24 @@
       <button type="button" name="save" title="Save comment"><i class="fa fa-check" aria-hidden="true"></i></button>
       <button type="button" name="cancel" title="Cancel"><i class="fa fa-times" aria-hidden="true"></i></button>`;
     
-    // trap all keyups inside commentForm except esc key
+    // trap all keyups inside commentForm
     commentForm.addEventListener('keyup', evt => {
       evt.stopPropagation();
-      if (evt.key === 'Esc') cancel();
-      if (evt.key === 'Enter') save();
+    });
+
+    // Special key handlers
+    commentForm.addEventListener('keydown', evt => {
+      // Save the comment if enter key is pressed.
+      // If shift key is held while pressing enter, start a newline.
+      if (evt.key === 'Enter' && !evt.shiftKey) {
+        evt.preventDefault();
+        save();
+      }
+
+      // If escape key is pressed, cancel submission.
+      if (evt.key === 'Escape') {
+        cancel();
+      }
     });
 
     const textarea = commentForm.querySelector('textarea');
