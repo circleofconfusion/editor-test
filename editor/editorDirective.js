@@ -15,30 +15,45 @@
         // Set all enter key presses to be new paragraphs
         document.execCommand('defaultParagraphSeparator', false, 'p');
 
+        // private properties
         const DEFAULT_TEXT = '<p>Add text...</p>';
         const editor = elem[0].querySelector('div[contenteditable]');
         
+        // public properties
         scope.showToolbar = false;
-        scope.makingComment = false;
+        scope.undoStack = [];
+        scope.redoStack = [];
         
+        // public functions
         scope.modifyDoc = modifyDoc;
         scope.insertComment = insertComment;
         scope.handleFocus = handleFocus;
         scope.handleBlur = handleBlur;
-        scope.handleInput = handleInput;
+        scope.handleKeydown = handleKeydown;
+        scope.handleKeyup = handleKeyup;
         scope.handlePaste = handlePaste;
+        scope.undo = undo;
+        scope.redo = redo;
         
+        // Initialize
         if (scope.text === '' || scope.text === '<p></p>' || scope.text === '<p><br></p>') {
           scope.text = $sce.trustAsHtml(DEFAULT_TEXT);
         } else {
           scope.text = $sce.trustAsHtml(scope.text);
         }
-        
+
+        scope.undoStack.push(scope.text);
+
+        editor.addEventListener('keydown', handleKeydown);
+        editor.addEventListener('keyup', handleKeyup);
+
+        // Function definitions
         function modifyDoc(command, value) {
           document.execCommand(command, false, value);
         }
         
         function insertComment() {
+          makingComment = true;
           scope.showToolbar = true;
           
           const selection = document.getSelection();
@@ -96,15 +111,50 @@
           }
         }
 
-        // calls injected save function when user is idle for 3 seconds
-        let timeoutHandle;
-        function handleInput() {
-          clearTimeout(timeoutHandle);
-          timeoutHandle = setTimeout(() => {
+        function handleKeydown(evt) {
+          if (evt.key === 'z' && evt.ctrlKey) {
+            evt.preventDefault();
+            undo();
+          } else if (evt.key === 'Z' && evt.shiftKey && evt.ctrlKey) {
+            evt.preventDefault();
+            redo();
+          }
+        }
+
+        let saveTimeoutHandle;
+        let undoTimeoutHandle;
+        // Calls injected save function when user is idle for 3 seconds
+        function handleKeyup(evt) {
+          // don't do anything for undo redo shortcuts
+          if (evt.key === 'z' && evt.ctrlKey) {
+            evt.preventDefault();
+            return;
+          } else if (evt.key === 'Z' && evt.ctrlKey && evt.shiftKey) {
+            evt.preventDefault();
+            return;
+          }
+
+          // Clear timeout on autosaving of data.
+          clearTimeout(saveTimeoutHandle);
+          // Start the autosave clock. If it gets to 3 seconds, execute the onsave function.
+          saveTimeoutHandle = setTimeout(() => {
             let value = editor.innerHTML;
             if (value === DEFAULT_TEXT || value === '<p></p>' || value === '<p><br></p>') value = '';
             scope.onsave({ value });
           }, 3000);
+
+          // Clear timeout on pushing to the undo stack.
+          clearTimeout(undoTimeoutHandle);
+          // Start the undo stack pushing timeout.
+          undoTimeoutHandle = setTimeout(() => {
+            let value = editor.innerHTML;
+            if (value !== scope.undoStack[scope.undoStack.length - 1]) {
+              // push the new value to the undo stack
+              scope.undoStack.push(value);
+              // since this is a new value, clear the redo stack
+              scope.redoStack = [];
+            }
+          }, 300);
         }
 
         function handlePaste(evt) {
@@ -115,6 +165,26 @@
           document.execCommand('insertHTML', false, paste);
           
           evt.preventDefault();
+        }
+
+        function undo() {
+          console.log('undo', scope.undoStack);
+          if (scope.undoStack.length > 1) {
+            scope.redoStack.push(scope.undoStack.pop());
+            editor.innerHTML = scope.undoStack[scope.undoStack.length - 1];
+          }
+        }
+
+        // FIXME: scope is only being applied after save function updates scope.text via the binding
+        // FIXME: ctrl z causes weird behavior - loses stack somehow
+
+        function redo() {
+          console.log('redo', scope.redoStack)
+          if (scope.redoStack.length > 0) {
+            const redoValue = scope.redoStack.pop();
+            scope.undoStack.push(redoValue);
+            editor.innerHTML = redoValue;
+          }
         }
       }
     };

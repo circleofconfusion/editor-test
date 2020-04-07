@@ -34,13 +34,17 @@ app-editor > .toolbar {
   position: absolute;
 }
 
-
 app-editor > .toolbar > button {
   border: none;
   margin: 0;
   border-top: 1px solid var(--gray);
   border-right: 1px solid var(--gray);
   background-color: white;
+  color: black;
+}
+
+app-editor > .toolbar > button:disabled {
+  color: gray;
 }
 
 app-editor > .toolbar > button:first-child {
