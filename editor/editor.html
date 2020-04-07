@@ -1,19 +1,16 @@
-<div class="toolbar" ng-if="showToolbar">
-  <button type="button" title="Ctrl+z" ng-disabled="undoStack.length === 1" ng-click="undo()">
+<div class="toolbar">
+  <button type="button" title="Ctrl+z" aria-label="undo">
     <i class="fa fa-undo" aria-hidden="true"></i>
-  </button><button type="button" title="Shift+Ctrl+z" ng-disabled="redoStack.length === 0" ng-click="redo()">
+  </button><button type="button" title="Shift+Ctrl+z" aria-label="redo">
     <i class="fa fa-repeat" aria-hidden="true"></i>
-  </button><button type="button" title="comment">
-    <i class="fa fa-comment-o" aria-hidden="true" ng-keydown="insertComment()"></i>
+  </button><button type="button" title="comment" aria-label="add comment">
+    <i class="fa fa-comment-o" aria-hidden="true"></i>
   </button>
 </div>
 <div class="heading">
-  <h5 ng-bind="editorTitle"></h5>
-  <button type="button" ng-click="closeEditor()">
+  <h5></h5>
+  <button type="button" aria-label="close">
     <i class="fa fa-times"></i>
   </button>
 </div>
-<div contenteditable
-    ng-focus="handleFocus()"
-    ng-paste="handlePaste($event)"
-    ng-bind-html="text"></div>
+<div contenteditable  tabindex="0"></div>

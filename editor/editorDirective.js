@@ -2,7 +2,7 @@
 
   'use strict';
 
-  angular.module('editorTest').directive('appEditor', ['$sce', function($sce) {
+  angular.module('editorTest').directive('appEditor', [function() {
     return {
       scope: {
         text: '<?',
@@ -15,46 +15,149 @@
         // Set all enter key presses to be new paragraphs
         document.execCommand('defaultParagraphSeparator', false, 'p');
 
-        // private properties
         const DEFAULT_TEXT = '<p>Add text...</p>';
-        const editor = elem[0].querySelector('div[contenteditable]');
+        const allowedEditorTags = ['p', 'mark'];
         
-        // public properties
-        scope.showToolbar = false;
-        scope.undoStack = [];
-        scope.redoStack = [];
-        
-        // public functions
-        scope.modifyDoc = modifyDoc;
-        scope.insertComment = insertComment;
-        scope.handleFocus = handleFocus;
-        scope.handleBlur = handleBlur;
-        scope.handleKeydown = handleKeydown;
-        scope.handleKeyup = handleKeyup;
-        scope.handlePaste = handlePaste;
-        scope.undo = undo;
-        scope.redo = redo;
+        // Shadow variable to run in parallel with the editor.innerHTML.
+        // Represents the last known state of the editor element.
+        // This will be updated by the debounced keyup handler on the editor element.
+        let editorHTML;
+
+        // Stacks used for undo/redo on the editorHTML.
+        // undoStack is fed by the debounced keyup handler on the editor element
+        // which will push the editorHTML value onto the stack.
+        // redoStack will be pushed to by the undo function which pops the undoStack onto the redoStack.
+        // redoStack is cleared by the debounced keyup handler on the editor element.
+        let undoStack = [];
+        let redoStack = [];
+
+        // DOM handles
+        const appEditor = elem[0];
+        const toolbar = appEditor.querySelector('div.toolbar');
+        const undoButton = toolbar.querySelector('button[aria-label="undo"]');
+        const redoButton = toolbar.querySelector('button[aria-label="redo"]');
+        const commentButton = toolbar.querySelector('button[aria-label="add comment"]');
+        const heading = appEditor.querySelector('div.heading');
+        const editorTitle = heading.querySelector('h5');
+        const closeButton = heading.querySelector('button[aria-label="close"]');
+        const editor = appEditor.querySelector('div[contenteditable]');
         
         // Initialize
+        editorTitle.appendChild(document.createTextNode(scope.editorTitle));
+
+        // Set text into editor element, sanitizing first.
         if (scope.text === '' || scope.text === '<p></p>' || scope.text === '<p><br></p>') {
-          scope.text = $sce.trustAsHtml(DEFAULT_TEXT);
+          editorHTML = sanitizeHtml(DEFAULT_TEXT, { allowedTags: allowedEditorTags });
         } else {
-          scope.text = $sce.trustAsHtml(scope.text);
+          editorHTML = sanitizeHtml(scope.text, { allowedTags: allowedEditorTags });
         }
 
-        scope.undoStack.push(scope.text);
+        editor.innerHTML = editorHTML;
 
+        // Set event listeners for each element
+        undoButton.addEventListener('click', undo);
+        redoButton.addEventListener('click', redo);
+        commentButton.addEventListener('click', insertComment);
+        closeButton.addEventListener('click', closeEditor);
         editor.addEventListener('keydown', handleKeydown);
-        editor.addEventListener('keyup', handleKeyup);
+        editor.addEventListener('keyup', debounce(handleEditorHtmlChange, 200));
+        editor.addEventListener('keyup', debounce(autosave, 3000));
+        editor.addEventListener('paste', handlePaste);
 
         // Function definitions
-        function modifyDoc(command, value) {
-          document.execCommand(command, false, value);
-        }
         
-        function insertComment() {
-          makingComment = true;
+        function handleFocus() {
           scope.showToolbar = true;
+
+          if (editor.innerHTML === DEFAULT_TEXT) {
+            editor.innerHTML = '';
+            document.execCommand('insertHtml', false, '<p></p>');
+          }
+        }
+
+        function handleBlur() {
+          if (editor.innerHTML === '' || editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>') {
+            editor.innerHTML = DEFAULT_TEXT;
+          }
+        }
+
+        /**
+         * Intercepts keydown events in the editor element to capture undo/redo shortcuts
+         * @param {Event} evt 
+         */
+        function handleKeydown(evt) {
+          if (evt.key === 'z' && evt.ctrlKey) {
+            evt.preventDefault();
+            undo();
+          } else if (evt.key === 'Z' && evt.shiftKey && evt.ctrlKey) {
+            evt.preventDefault();
+            redo();
+          }
+        }
+
+        // Calls injected save function when user is idle for 3 seconds
+        function autosave(evt) {
+          // don't do anything for undo redo shortcuts
+          // TODO: Verify that this is OK
+          if (evt.key === 'z' && evt.ctrlKey) {
+            evt.preventDefault();
+            return;
+          } else if (evt.key === 'Z' && evt.ctrlKey && evt.shiftKey) {
+            evt.preventDefault();
+            return;
+          }
+          let value = editor.innerHTML;
+          if (value === DEFAULT_TEXT || value === '<p></p>' || value === '<p><br></p>') value = '';
+          scope.onsave({ value });
+        }
+
+        function handleEditorHtmlChange(evt) {
+          // don't do anything for undo redo shortcuts
+          // TODO: Verify that this is OK
+          if (evt.key === 'z' && evt.ctrlKey) {
+            evt.preventDefault();
+            return;
+          } else if (evt.key === 'Z' && evt.ctrlKey && evt.shiftKey) {
+            evt.preventDefault();
+            return;
+          }
+          
+          if (editor.innerHTML !== editorHTML) {
+            // push the new value to the undo stack
+            undoStack.push(editorHTML);
+            editorHTML = sanitizeHtml(editor.innerHTML, allowedEditorTags);
+            // since this is a new value, clear the redo stack
+            redoStack = [];
+          }
+        }
+
+        function handlePaste(evt) {
+          const paste = (evt.clipboardData || window.clipboardData)
+            .getData('text')
+            .replace(/\n/g, '</p><p>');
+          
+          document.execCommand('insertHTML', false, paste);
+          
+          evt.preventDefault();
+        }
+
+        function undo() {
+          if (undoStack.length > 0) {
+            redoStack.push(editorHTML);
+            editorHTML = undoStack.pop();
+            editor.innerHTML = editorHTML;
+          }
+        }
+
+        function redo() {
+          if (redoStack.length > 0) {
+            undoStack.push(editorHTML);
+            editorHTML = redoStack.pop();
+            editor.innerHTML = editorHTML;
+          }
+        }
+
+        function insertComment() {
           
           const selection = document.getSelection();
           const selectionRange = selection.getRangeAt(0);
@@ -95,96 +198,9 @@
             editor.removeEventListener('cancel', cancelComment);
           }
         }
-        
-        function handleFocus() {
-          scope.showToolbar = true;
 
-          if (editor.innerHTML === DEFAULT_TEXT) {
-            editor.innerHTML = '';
-            document.execCommand('insertHtml', false, '<p></p>');
-          }
-        }
-
-        function handleBlur() {
-          if (editor.innerHTML === '' || editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>') {
-            editor.innerHTML = DEFAULT_TEXT;
-          }
-        }
-
-        function handleKeydown(evt) {
-          if (evt.key === 'z' && evt.ctrlKey) {
-            evt.preventDefault();
-            undo();
-          } else if (evt.key === 'Z' && evt.shiftKey && evt.ctrlKey) {
-            evt.preventDefault();
-            redo();
-          }
-        }
-
-        let saveTimeoutHandle;
-        let undoTimeoutHandle;
-        // Calls injected save function when user is idle for 3 seconds
-        function handleKeyup(evt) {
-          // don't do anything for undo redo shortcuts
-          if (evt.key === 'z' && evt.ctrlKey) {
-            evt.preventDefault();
-            return;
-          } else if (evt.key === 'Z' && evt.ctrlKey && evt.shiftKey) {
-            evt.preventDefault();
-            return;
-          }
-
-          // Clear timeout on autosaving of data.
-          clearTimeout(saveTimeoutHandle);
-          // Start the autosave clock. If it gets to 3 seconds, execute the onsave function.
-          saveTimeoutHandle = setTimeout(() => {
-            let value = editor.innerHTML;
-            if (value === DEFAULT_TEXT || value === '<p></p>' || value === '<p><br></p>') value = '';
-            scope.onsave({ value });
-          }, 3000);
-
-          // Clear timeout on pushing to the undo stack.
-          clearTimeout(undoTimeoutHandle);
-          // Start the undo stack pushing timeout.
-          undoTimeoutHandle = setTimeout(() => {
-            let value = editor.innerHTML;
-            if (value !== scope.undoStack[scope.undoStack.length - 1]) {
-              // push the new value to the undo stack
-              scope.undoStack.push(value);
-              // since this is a new value, clear the redo stack
-              scope.redoStack = [];
-            }
-          }, 300);
-        }
-
-        function handlePaste(evt) {
-          const paste = (evt.clipboardData || window.clipboardData)
-            .getData('text')
-            .replace(/\n/g, '</p><p>');
-
-          document.execCommand('insertHTML', false, paste);
-          
-          evt.preventDefault();
-        }
-
-        function undo() {
-          console.log('undo', scope.undoStack);
-          if (scope.undoStack.length > 1) {
-            scope.redoStack.push(scope.undoStack.pop());
-            editor.innerHTML = scope.undoStack[scope.undoStack.length - 1];
-          }
-        }
-
-        // FIXME: scope is only being applied after save function updates scope.text via the binding
-        // FIXME: ctrl z causes weird behavior - loses stack somehow
-
-        function redo() {
-          console.log('redo', scope.redoStack)
-          if (scope.redoStack.length > 0) {
-            const redoValue = scope.redoStack.pop();
-            scope.undoStack.push(redoValue);
-            editor.innerHTML = redoValue;
-          }
+        function closeEditor() {
+          console.error('closeEditor', 'implement');
         }
       }
     };
@@ -240,5 +256,24 @@
     function cancel() {
       commentForm.dispatchEvent(new Event('cancel', { bubbles: true }));
     }
+  }
+
+  // Returns a function, that, as long as it continues to be invoked, will not
+  // be triggered. The function will be called after it stops being called for
+  // N milliseconds. If `immediate` is passed, trigger the function on the
+  // leading edge, instead of the trailing.
+  function debounce(func, wait, immediate) {
+    var timeout;
+    return function() {
+      var context = this, args = arguments;
+      var later = function() {
+        timeout = null;
+        if (!immediate) func.apply(context, args);
+      };
+      var callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+      if (callNow) func.apply(context, args);
+    };
   }
 })();
