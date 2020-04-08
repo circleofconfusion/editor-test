@@ -6,6 +6,7 @@
 app-editor {
   margin: 10px 0;
   display: block;
+  position: relative;
 }
 
 app-editor > div[contenteditable] {
@@ -13,7 +14,6 @@ app-editor > div[contenteditable] {
   display: block;
   width: 100%;
   min-height: 2.5em;
-  position: relative;
 }
 
 app-editor > div[contenteditable]:focus {
@@ -32,6 +32,7 @@ app-editor > .toolbar {
   margin: 0;
   padding: 0;
   position: absolute;
+  visibility: hidden;
 }
 
 app-editor > .toolbar > button {
@@ -41,6 +42,7 @@ app-editor > .toolbar > button {
   border-right: 1px solid var(--gray);
   background-color: white;
   color: black;
+  height: 1.6em;
 }
 
 app-editor > .toolbar > button:disabled {
@@ -57,11 +59,12 @@ app-editor > .heading {
 }
 
 app-editor > .heading > h5 {
-  margin: 0;
+  margin: 0 0 0.5em;
   font-weight: bold;
   text-transform: uppercase;
 }
 
+/* close button */
 app-editor > .heading > button {
   border: none;
   margin: 0;
@@ -69,14 +72,23 @@ app-editor > .heading > button {
   border-right: 1px solid var(--gray);
   border-left: 1px solid var(--gray);
   background-color: white;
+  height: 1.6em;
 }
 
 app-editor .comment-form {
   display: grid;
-  width: auto;
   position: absolute;
-  grid-template-columns: repeat(3, min-content);
+  width: 300px;
+  grid-template-columns: 1fr repeat(2, min-content);
   border: 1px solid var(--gray);
+  display: none;
+}
+
+app-editor .comment-form textarea {
+  resize:none;
+  height: 3em;
+  border: none;
+  border-right: 1px solid var(--gray);
 }
 
 app-editor .comment-form button {

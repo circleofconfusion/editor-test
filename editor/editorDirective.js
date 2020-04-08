@@ -8,12 +8,17 @@
         text: '<?',
         onsave: '&',
         onsavecomment: '&',
-        editorTitle: '@?'
+        editorTitle: '@?',
+        closeable: '<?'
       },
       templateUrl: '/editor/editor.html',
       link: function(scope, elem) {
         // Set all enter key presses to be new paragraphs
         document.execCommand('defaultParagraphSeparator', false, 'p');
+
+        //=====================================================================
+        // Variable Declarations
+        //=====================================================================
 
         const DEFAULT_TEXT = '<p>Add text...</p>';
         const allowedEditorTags = ['p', 'mark'];
@@ -24,25 +29,28 @@
         let editorHTML;
 
         // Stacks used for undo/redo on the editorHTML.
-        // undoStack is fed by the debounced keyup handler on the editor element
-        // which will push the editorHTML value onto the stack.
-        // redoStack will be pushed to by the undo function which pops the undoStack onto the redoStack.
-        // redoStack is cleared by the debounced keyup handler on the editor element.
         let undoStack = [];
         let redoStack = [];
 
         // DOM handles
-        const appEditor = elem[0];
-        const toolbar = appEditor.querySelector('div.toolbar');
-        const undoButton = toolbar.querySelector('button[aria-label="undo"]');
-        const redoButton = toolbar.querySelector('button[aria-label="redo"]');
-        const commentButton = toolbar.querySelector('button[aria-label="add comment"]');
-        const heading = appEditor.querySelector('div.heading');
-        const editorTitle = heading.querySelector('h5');
-        const closeButton = heading.querySelector('button[aria-label="close"]');
-        const editor = appEditor.querySelector('div[contenteditable]');
+        const appEditor = elem[0],
+          toolbar = appEditor.querySelector('div.toolbar'),
+          undoButton = toolbar.querySelector('button[aria-label="undo"]'),
+          redoButton = toolbar.querySelector('button[aria-label="redo"]'),
+          commentButton = toolbar.querySelector('button[aria-label="add comment"]'),
+          heading = appEditor.querySelector('div.heading'),
+          editorTitle = heading.querySelector('h5'),
+          closeButton = heading.querySelector('button[aria-label="close"]'),
+          editor = appEditor.querySelector('div[contenteditable]'),
+          commentForm = appEditor.querySelector('form.comment-form'),
+          commentTextarea = commentForm.querySelector('textarea'),
+          saveCommentButton = commentForm.querySelector('button[aria-label="save comment"]'),
+          cancelCommentButton = commentForm.querySelector('button[aria-label="cancel comment"]');
         
+        //=====================================================================
         // Initialize
+        //=====================================================================
+
         editorTitle.appendChild(document.createTextNode(scope.editorTitle));
 
         // Set text into editor element, sanitizing first.
@@ -51,31 +59,78 @@
         } else {
           editorHTML = sanitizeHtml(scope.text, { allowedTags: allowedEditorTags });
         }
-
+        
         editor.innerHTML = editorHTML;
 
-        // Set event listeners for each element
+        if (scope.closeable !== true) {
+          closeButton.style.display = 'none';
+        }
+        
+        //=====================================================================
+        // Event Listeners
+        //=====================================================================
+
+        appEditor.addEventListener('focusout', refreshUi);
         undoButton.addEventListener('click', undo);
         redoButton.addEventListener('click', redo);
         commentButton.addEventListener('click', insertComment);
         closeButton.addEventListener('click', closeEditor);
+        editor.addEventListener('focus', editorFocus);
+        editor.addEventListener('blur', editorBlur);
         editor.addEventListener('keydown', handleKeydown);
+        // TODO: move the keyup handler to the appEditor element so that undo/redo works after clicking toolbar buttons.
         editor.addEventListener('keyup', debounce(handleEditorHtmlChange, 200));
         editor.addEventListener('keyup', debounce(autosave, 3000));
+        editor.addEventListener('mouseup', debounce(refreshUi, 200));
         editor.addEventListener('paste', handlePaste);
+        saveCommentButton.addEventListener('click', saveComment);
+        cancelCommentButton.addEventListener('click', cancelComment);
 
+        //=====================================================================
         // Function definitions
-        
-        function handleFocus() {
-          scope.showToolbar = true;
+        //=====================================================================
+
+        function refreshUi() {
+          // enable/disable undo button
+          if (undoStack.length > 0) undoButton.disabled = false;
+          else undoButton.disabled = true;
+
+          // enable/disable redo button
+          if (redoStack.length > 0) redoButton.disabled = false;
+          else redoButton.disabled = true;
+
+          // show/hide toolbar
+          // Wait 50ms so that whatever got clicked on outside of the editor
+          // has time to receive focus.
+          setTimeout(() => {
+            const children = Array.from(appEditor.querySelectorAll('*'));
+            const activeElement = document.activeElement;
+            if (!children.includes(activeElement))
+              toolbar.style.visibility = 'hidden';
+          }, 50);
+
+          // enable/disable comment button
+          const selection = document.getSelection();
+          const selectionRange = selection.getRangeAt(0);
+          if (selection.anchorNode.parentElement.offsetParent === appEditor && selectionRange.startOffset < selectionRange.endOffset) {
+            commentButton.disabled = false;
+          } else {
+            commentButton.disabled = true;
+          }
+        }
+
+        function editorFocus() {
+          toolbar.style.visibility = 'visible';
 
           if (editor.innerHTML === DEFAULT_TEXT) {
             editor.innerHTML = '';
             document.execCommand('insertHtml', false, '<p></p>');
           }
+
+          refreshUi();
         }
 
-        function handleBlur() {
+        function editorBlur() {
           if (editor.innerHTML === '' || editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>') {
             editor.innerHTML = DEFAULT_TEXT;
           }
@@ -106,7 +161,7 @@
             evt.preventDefault();
             return;
           }
-          let value = editor.innerHTML;
+          let value = sanitizeHtml(editor.innerHTML, allowedEditorTags);
           if (value === DEFAULT_TEXT || value === '<p></p>' || value === '<p><br></p>') value = '';
           scope.onsave({ value });
         }
@@ -122,13 +177,8 @@
             return;
           }
           
-          if (editor.innerHTML !== editorHTML) {
-            // push the new value to the undo stack
-            undoStack.push(editorHTML);
-            editorHTML = sanitizeHtml(editor.innerHTML, allowedEditorTags);
-            // since this is a new value, clear the redo stack
-            redoStack = [];
-          }
+          addUndoItem();
+          refreshUi();
         }
 
         function handlePaste(evt) {
@@ -139,14 +189,27 @@
           document.execCommand('insertHTML', false, paste);
           
           evt.preventDefault();
+          refreshUi();
+        }
+
+        function addUndoItem() {
+          if (editor.innerHTML !== editorHTML) {
+            // push the new value to the undo stack
+            undoStack.push(editorHTML);
+            editorHTML = sanitizeHtml(editor.innerHTML, allowedEditorTags);
+            // since this is a new value, clear the redo stack
+            redoStack = [];
+          }
         }
 
         function undo() {
+          hideCommentForm();
           if (undoStack.length > 0) {
             redoStack.push(editorHTML);
             editorHTML = undoStack.pop();
             editor.innerHTML = editorHTML;
           }
+          refreshUi();
         }
 
         function redo() {
@@ -155,48 +218,57 @@
             editorHTML = redoStack.pop();
             editor.innerHTML = editorHTML;
           }
+          refreshUi();
         }
 
         function insertComment() {
-          
           const selection = document.getSelection();
-          const selectionRange = selection.getRangeAt(0);
-          const selectionBoundingRect = selectionRange.getBoundingClientRect();
-          const selectedText = selection.toString();
           const commentId = Math.random().toString(36).substr(2, 9);
           
           // add a mark element to the text
-          document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selectedText}</mark>`);
+          document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selection.toString()}</mark>`);
           
-          const commentForm = createCommentForm(
-            selectionBoundingRect.x + selectionBoundingRect.width / 2 - editor.offsetLeft,
-            selectionBoundingRect.y - editor.offsetTop
-          );
-          editor.appendChild(commentForm);
-          commentForm.querySelector('textarea').focus();
+          showCommentForm(selection, commentId);
+        }
+
+        function showCommentForm(selection, commentId) {
+          // need to do this first so commentForm has an offset dimensions > 0
+          commentForm.style.display = 'grid';
+
+          const selectionBoundingRect = selection.getRangeAt(0).getBoundingClientRect();
+          const left = selectionBoundingRect.x + selectionBoundingRect.width / 2 - appEditor.offsetLeft;
+          const top = selectionBoundingRect.y - appEditor.offsetTop - commentForm.offsetHeight;
           
-          editor.addEventListener('save', saveComment);
-          
-          function saveComment(evt) {
-            evt.stopImmediatePropagation();
-            scope.onsavecomment({ commentId, commentText: evt.detail });
-            editor.removeChild(document.querySelector('form.comment-form'));
-            // remove this event handler so subsequent comments won't call this instance
-            editor.removeEventListener('save', saveComment);
-          }
-          
-          // event handlers for editor
-          editor.addEventListener('cancel', cancelComment);
-            
-          function cancelComment(evt) {
-            evt.stopImmediatePropagation();
-            const textNode = document.createTextNode(selectedText);
-            const mark = editor.querySelector(`mark[data-id="${commentId}"]`);
-            mark.parentElement.replaceChild(textNode, mark);
-            editor.removeChild(document.querySelector('form.comment-form'));
-            // remove this event handler so subsequent comments won't call this instance
-            editor.removeEventListener('cancel', cancelComment);
-          }
+          commentForm.commentId.value = commentId;
+          // TODO: make the positioning of the comment form a bit smarter to handle odd scrolling situations
+          // TODO: add triangle element that points to selection
+          commentForm.style.left = `${left}px`;
+          commentForm.style.top = `${top}px`;
+          commentTextarea.focus();
+        }
+
+        function hideCommentForm() {
+          commentForm.reset();
+          commentForm.style.display = 'none';
+        }
+
+        function saveComment() {
+          scope.onsavecomment({
+            commentId: commentForm.commentId.value,
+            commentText: commentForm.comment.value
+          });
+          addUndoItem();
+          hideCommentForm();
+          refreshUi();
+        }
+         
+        function cancelComment() {
+
+          const mark = editor.querySelector(`mark[data-id="${commentForm.commentId.value}"]`);
+          const textNode = document.createTextNode(mark.innerHTML);
+          mark.parentElement.replaceChild(textNode, mark);
+          hideCommentForm();
+          refreshUi();
         }
 
         function closeEditor() {
@@ -206,57 +278,57 @@
     };
   }]);
 
-  function createCommentForm(left, bottom) {
-    const commentForm = document.createElement('form');
-    commentForm.className='comment-form';
-    commentForm.style.left = `${left}px`;
-    commentForm.style.bottom = `calc(${bottom}px + 1.5em)`;
-    commentForm.innerHTML = `<textarea name="comment" style="resize:none; width: 250px; height: 3em;" required></textarea>
-      <button type="button" name="save" title="Save comment"><i class="fa fa-check" aria-hidden="true"></i></button>
-      <button type="button" name="cancel" title="Cancel"><i class="fa fa-times" aria-hidden="true"></i></button>`;
+  // function createCommentForm(left, bottom) {
+  //   const commentForm = document.createElement('form');
+  //   commentForm.className='comment-form';
+  //   commentForm.style.left = `${left}px`;
+  //   commentForm.style.bottom = `calc(${bottom}px + 1.5em)`;
+  //   commentForm.innerHTML = `<textarea name="comment" style="resize:none; width: 250px; height: 3em;" required></textarea>
+  //     <button type="button" name="save" title="Save comment"><i class="fa fa-check" aria-hidden="true"></i></button>
+  //     <button type="button" name="cancel" title="Cancel"><i class="fa fa-times" aria-hidden="true"></i></button>`;
     
-    // trap all keyups inside commentForm
-    commentForm.addEventListener('keyup', evt => {
-      evt.stopPropagation();
-    });
+  //   // trap all keyups inside commentForm
+  //   commentForm.addEventListener('keyup', evt => {
+  //     evt.stopPropagation();
+  //   });
 
-    // Special key handlers
-    commentForm.addEventListener('keydown', evt => {
-      // Save the comment if enter key is pressed.
-      // If shift key is held while pressing enter, start a newline.
-      if (evt.key === 'Enter' && !evt.shiftKey) {
-        evt.preventDefault();
-        save();
-      }
+  //   // Special key handlers
+  //   commentForm.addEventListener('keydown', evt => {
+  //     // Save the comment if enter key is pressed.
+  //     // If shift key is held while pressing enter, start a newline.
+  //     if (evt.key === 'Enter' && !evt.shiftKey) {
+  //       evt.preventDefault();
+  //       save();
+  //     }
 
-      // If escape key is pressed, cancel submission.
-      if (evt.key === 'Escape') {
-        cancel();
-      }
-    });
+  //     // If escape key is pressed, cancel submission.
+  //     if (evt.key === 'Escape') {
+  //       cancel();
+  //     }
+  //   });
 
-    const textarea = commentForm.querySelector('textarea');
+  //   const textarea = commentForm.querySelector('textarea');
 
-    commentForm.querySelector('button[name="save"]').addEventListener('click', evt => {
-      evt.stopImmediatePropagation();
-      save();
-    });
+  //   commentForm.querySelector('button[name="save"]').addEventListener('click', evt => {
+  //     evt.stopPropagation();
+  //     save();
+  //   });
 
-    commentForm.querySelector('button[name="cancel"]').addEventListener('click', evt => {
-      evt.stopImmediatePropagation();
-      cancel();
-    });
+  //   commentForm.querySelector('button[name="cancel"]').addEventListener('click', evt => {
+  //     evt.stopPropagation();
+  //     cancel();
+  //   });
 
-    return commentForm;
+  //   return commentForm;
 
-    function save() {
-      commentForm.dispatchEvent(new CustomEvent('save', { detail: textarea.value, bubbles: true }));
-    }
+  //   function save() {
+  //     commentForm.dispatchEvent(new CustomEvent('save', { detail: textarea.value, bubbles: true }));
+  //   }
 
-    function cancel() {
-      commentForm.dispatchEvent(new Event('cancel', { bubbles: true }));
-    }
-  }
+  //   function cancel() {
+  //     commentForm.dispatchEvent(new Event('cancel', { bubbles: true }));
+  //   }
+  // }
 
   // Returns a function, that, as long as it continues to be invoked, will not
   // be triggered. The function will be called after it stops being called for
