@@ -155,7 +155,6 @@
          * @param {Event} evt 
          */
         function handleKeydown(evt) {
-          console.log('handleKeyDown', evt);
           if (evt.key === 'z' && evt.ctrlKey) {
             evt.preventDefault();
             undo();
@@ -170,7 +169,6 @@
          */
         function autosave(evt) {
           // don't do anything for undo redo shortcuts
-          // TODO: Verify that this is OK
           if (evt.key === 'z' && evt.ctrlKey) {
             evt.preventDefault();
             return;
@@ -189,7 +187,6 @@
          */
         function handleEditorHtmlChange(evt) {
           // don't do anything for undo redo shortcuts
-          // TODO: Verify that this is OK
           if (evt.key === 'z' && evt.ctrlKey) {
             evt.preventDefault();
             return;
@@ -222,7 +219,6 @@
          * Adds a text/html change to the undo history.
          */
         function addUndoItem() {
-          console.log('addUndoItem', editor.innerHTML, editorHTML)
           if (editor.innerHTML !== editorHTML) {
             // push the new value to the undo stack
             undoStack.push(editorHTML);
@@ -236,7 +232,6 @@
          * Undoes a change in the editor.
          */
         function undo() {
-          console.log('undo1', undoStack, editorHTML, redoStack);
           if (undoStack.length > 0) {
             redoStack.push(editorHTML);
             editorHTML = undoStack.pop();
@@ -244,21 +239,18 @@
           }
           hideCommentForm();
           refreshUi();
-          console.log('undo2', undoStack, editorHTML, redoStack);
         }
 
         /**
          * Redoes a previously undone change in the editor.
          */
         function redo() {
-          console.log('redo1', undoStack, editorHTML, redoStack);
           if (redoStack.length > 0) {
             undoStack.push(editorHTML);
             editorHTML = redoStack.pop();
             editor.innerHTML = editorHTML;
           }
           refreshUi();
-          console.log('redo2', undoStack, editorHTML, redoStack);
         }
 
         /**
