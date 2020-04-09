@@ -258,15 +258,28 @@
          */
         function insertComment() {
           const selection = document.getSelection();
+          const range = selection.getRangeAt(0);
+          const selectionBoundingRect = range.getBoundingClientRect();
           const commentId = Math.random().toString(36).substr(2, 9);
           
           // add a mark element to the text
-          document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selection.toString()}</mark>`);
+          // document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selection.toString()}</mark>`);
+          const mark = document.createElement('mark');
+          mark.setAttribute('data-id', commentId);
+          mark.appendChild(document.createTextNode(selection.toString()));
+          
+          range.deleteContents();
+          range.insertNode(mark);
+          // range.collapse(true);
+          // range.insertNode(mark);
+          // range.setStartAfter(mark);
+          // range.collapse(true);
+          // selection.removeRange(range);
+          // selection.addRange(range);
 
           // need to do this before any other action so commentForm has offset dimensions > 0
           commentForm.style.display = 'grid';
 
-          const selectionBoundingRect = selection.getRangeAt(0).getBoundingClientRect();
           const left = selectionBoundingRect.x + selectionBoundingRect.width / 2 - appEditor.offsetLeft;
           const top = selectionBoundingRect.y - appEditor.offsetTop - commentForm.offsetHeight;
           
@@ -324,8 +337,10 @@
          */
         function cancelComment() {
           const mark = editor.querySelector(`mark[data-id="${commentForm.commentId.value}"]`);
+          const markParent = mark.parentElement;
           const textNode = document.createTextNode(mark.innerHTML);
           mark.parentElement.replaceChild(textNode, mark);
+          markParent.normalize();
           hideCommentForm();
           refreshUi();
         }
