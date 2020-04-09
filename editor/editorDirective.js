@@ -33,8 +33,8 @@
         let redoStack = [];
 
         // DOM handles
-        const appEditor = elem[0],
-          toolbar = appEditor.querySelector('div.toolbar'),
+        const appEditor = elem[0], // the <app-editor> root tag
+          toolbar = appEditor.querySelector('div.toolbar'), 
           undoButton = toolbar.querySelector('button[aria-label="undo"]'),
           redoButton = toolbar.querySelector('button[aria-label="redo"]'),
           commentButton = toolbar.querySelector('button[aria-label="add comment"]'),
@@ -90,6 +90,13 @@
         // Function definitions
         //=====================================================================
 
+        /**
+         * Updates the user interface to reflect internal data.
+         * Affects:
+         *  - show/hide toolbar
+         *  - enable/disable undo/redo buttons
+         *  - enable/disable comment button
+         */
         function refreshUi() {
           // enable/disable undo button
           if (undoStack.length > 0) undoButton.disabled = false;
@@ -119,17 +126,24 @@
           }
         }
 
+        /**
+         * When editor is focused, swaps out default text for an empty paragraph.
+         */
         function editorFocus() {
           toolbar.style.visibility = 'visible';
 
           if (editor.innerHTML === DEFAULT_TEXT) {
             editor.innerHTML = '';
+            // use execCommand so that the cursor is focused inside the paragraph
             document.execCommand('insertHtml', false, '<p></p>');
           }
 
           refreshUi();
         }
 
+        /**
+         * When focus is lost, checks for empty(ish) editor.innerHTML and replaces it with the default text.
+         */
         function editorBlur() {
           if (editor.innerHTML === '' || editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>') {
             editor.innerHTML = DEFAULT_TEXT;
@@ -151,7 +165,9 @@
           }
         }
 
-        // Calls injected save function when user is idle for 3 seconds
+        /**
+         * Calls injected save function when user is idle for 3 seconds.
+         */
         function autosave(evt) {
           // don't do anything for undo redo shortcuts
           // TODO: Verify that this is OK
@@ -167,6 +183,10 @@
           scope.onsave({ value });
         }
 
+        /**
+         * Adds a change to the undoStack after a period of inactivity.
+         * @param {Event} evt Keyup event
+         */
         function handleEditorHtmlChange(evt) {
           // don't do anything for undo redo shortcuts
           // TODO: Verify that this is OK
@@ -182,6 +202,11 @@
           refreshUi();
         }
 
+        // TODO: Test this with MS Word 😀😀😀😀😀
+        /**
+         * Tweaks incoming text pasted into the editor.
+         * @param {Event} evt The paste event.
+         */
         function handlePaste(evt) {
           const paste = (evt.clipboardData || window.clipboardData)
             .getData('text')
@@ -193,6 +218,9 @@
           refreshUi();
         }
 
+        /**
+         * Adds a text/html change to the undo history.
+         */
         function addUndoItem() {
           console.log('addUndoItem', editor.innerHTML, editorHTML)
           if (editor.innerHTML !== editorHTML) {
@@ -204,6 +232,9 @@
           }
         }
 
+        /**
+         * Undoes a change in the editor.
+         */
         function undo() {
           console.log('undo1', undoStack, editorHTML, redoStack);
           if (undoStack.length > 0) {
@@ -216,6 +247,9 @@
           console.log('undo2', undoStack, editorHTML, redoStack);
         }
 
+        /**
+         * Redoes a previously undone change in the editor.
+         */
         function redo() {
           console.log('redo1', undoStack, editorHTML, redoStack);
           if (redoStack.length > 0) {
@@ -227,6 +261,9 @@
           console.log('redo2', undoStack, editorHTML, redoStack);
         }
 
+        /**
+         * Adds a mark element around the current selection, and opens/initializes the comment form.
+         */
         function insertComment() {
           const selection = document.getSelection();
           const commentId = Math.random().toString(36).substr(2, 9);
@@ -234,11 +271,7 @@
           // add a mark element to the text
           document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selection.toString()}</mark>`);
 
-          showCommentForm(selection, commentId);
-        }
-
-        function showCommentForm(selection, commentId) {
-          // need to do this first so commentForm has an offset dimensions > 0
+          // need to do this before any other action so commentForm has offset dimensions > 0
           commentForm.style.display = 'grid';
 
           const selectionBoundingRect = selection.getRangeAt(0).getBoundingClientRect();
@@ -253,11 +286,18 @@
           commentTextarea.focus();
         }
 
+        /**
+         * Resets and hides the comment form.
+         */
         function hideCommentForm() {
           commentForm.reset();
           commentForm.style.display = 'none';
         }
 
+        /**
+         * Captures keydown events and if the keydown is enter or escape, saves or cancels the comment.
+         * @param {Event} evt 
+         */
         function commentFormSpecialKeys(evt) {
           evt.stopPropagation();
 
@@ -273,8 +313,10 @@
           }
         }
 
+        /**
+         * Calls an injected onsavecomment function, passing the commentId and comment text.
+         */
         function saveComment() {
-          console.log('saveComment1', undoStack, editorHTML, redoStack);
           scope.onsavecomment({
             commentId: commentForm.commentId.value,
             commentText: commentForm.comment.value
@@ -282,11 +324,13 @@
           addUndoItem();
           hideCommentForm();
           refreshUi();
-          console.log('saveComment2', undoStack, editorHTML, redoStack);
         }
          
+        /**
+         * Closes/resets the comment form.
+         * Removes the <mark> tag from the editor.
+         */
         function cancelComment() {
-
           const mark = editor.querySelector(`mark[data-id="${commentForm.commentId.value}"]`);
           const textNode = document.createTextNode(mark.innerHTML);
           mark.parentElement.replaceChild(textNode, mark);
@@ -294,6 +338,9 @@
           refreshUi();
         }
 
+        /**
+         * Calls an injected outside function to close the editor.
+         */
         function closeEditor() {
           console.error('closeEditor', 'implement');
         }
