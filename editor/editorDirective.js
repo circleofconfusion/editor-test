@@ -77,8 +77,7 @@
         closeButton.addEventListener('click', closeEditor);
         editor.addEventListener('focus', editorFocus);
         editor.addEventListener('blur', editorBlur);
-        editor.addEventListener('keydown', handleKeydown);
-        // TODO: move the keyup handler to the appEditor element so that undo/redo works after clicking toolbar buttons.
+        appEditor.addEventListener('keydown', handleKeydown);
         editor.addEventListener('keyup', debounce(handleEditorHtmlChange, 200));
         editor.addEventListener('keyup', debounce(autosave, 3000));
         editor.addEventListener('mouseup', debounce(refreshUi, 200));
@@ -138,10 +137,11 @@
         }
 
         /**
-         * Intercepts keydown events in the editor element to capture undo/redo shortcuts
+         * Intercepts keydown events anywhere inside the app-editor element to capture undo/redo shortcuts
          * @param {Event} evt 
          */
         function handleKeydown(evt) {
+          console.log('handleKeyDown', evt);
           if (evt.key === 'z' && evt.ctrlKey) {
             evt.preventDefault();
             undo();
@@ -162,7 +162,7 @@
             evt.preventDefault();
             return;
           }
-          let value = sanitizeHtml(editor.innerHTML, allowedEditorTags);
+          let value = sanitizeHtml(editor.innerHTML, { allowedTags: allowedEditorTags });
           if (value === DEFAULT_TEXT || value === '<p></p>' || value === '<p><br></p>') value = '';
           scope.onsave({ value });
         }
@@ -194,32 +194,37 @@
         }
 
         function addUndoItem() {
+          console.log('addUndoItem', editor.innerHTML, editorHTML)
           if (editor.innerHTML !== editorHTML) {
             // push the new value to the undo stack
             undoStack.push(editorHTML);
-            editorHTML = sanitizeHtml(editor.innerHTML, allowedEditorTags);
+            editorHTML = sanitizeHtml(editor.innerHTML, { allowedTags: allowedEditorTags });
             // since this is a new value, clear the redo stack
             redoStack = [];
           }
         }
 
         function undo() {
-          hideCommentForm();
+          console.log('undo1', undoStack, editorHTML, redoStack);
           if (undoStack.length > 0) {
             redoStack.push(editorHTML);
             editorHTML = undoStack.pop();
             editor.innerHTML = editorHTML;
           }
+          hideCommentForm();
           refreshUi();
+          console.log('undo2', undoStack, editorHTML, redoStack);
         }
 
         function redo() {
+          console.log('redo1', undoStack, editorHTML, redoStack);
           if (redoStack.length > 0) {
             undoStack.push(editorHTML);
             editorHTML = redoStack.pop();
             editor.innerHTML = editorHTML;
           }
           refreshUi();
+          console.log('redo2', undoStack, editorHTML, redoStack);
         }
 
         function insertComment() {
@@ -228,7 +233,7 @@
           
           // add a mark element to the text
           document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selection.toString()}</mark>`);
-          
+
           showCommentForm(selection, commentId);
         }
 
@@ -254,6 +259,9 @@
         }
 
         function commentFormSpecialKeys(evt) {
+          evt.stopPropagation();
+
+          // If enter key is pressed without the shift key, submit comment.
           if (evt.key === 'Enter' && !evt.shiftKey) {
             evt.preventDefault();
             saveComment();
@@ -266,6 +274,7 @@
         }
 
         function saveComment() {
+          console.log('saveComment1', undoStack, editorHTML, redoStack);
           scope.onsavecomment({
             commentId: commentForm.commentId.value,
             commentText: commentForm.comment.value
@@ -273,6 +282,7 @@
           addUndoItem();
           hideCommentForm();
           refreshUi();
+          console.log('saveComment2', undoStack, editorHTML, redoStack);
         }
          
         function cancelComment() {
