@@ -83,6 +83,7 @@
         editor.addEventListener('keyup', debounce(autosave, 3000));
         editor.addEventListener('mouseup', debounce(refreshUi, 200));
         editor.addEventListener('paste', handlePaste);
+        commentForm.addEventListener('keydown', commentFormSpecialKeys);
         saveCommentButton.addEventListener('click', saveComment);
         cancelCommentButton.addEventListener('click', cancelComment);
 
@@ -252,6 +253,18 @@
           commentForm.style.display = 'none';
         }
 
+        function commentFormSpecialKeys(evt) {
+          if (evt.key === 'Enter' && !evt.shiftKey) {
+            evt.preventDefault();
+            saveComment();
+          }
+
+          // If escape key is pressed, cancel submission.
+          if (evt.key === 'Escape') {
+            cancelComment();
+          }
+        }
+
         function saveComment() {
           scope.onsavecomment({
             commentId: commentForm.commentId.value,
@@ -277,58 +290,6 @@
       }
     };
   }]);
-
-  // function createCommentForm(left, bottom) {
-  //   const commentForm = document.createElement('form');
-  //   commentForm.className='comment-form';
-  //   commentForm.style.left = `${left}px`;
-  //   commentForm.style.bottom = `calc(${bottom}px + 1.5em)`;
-  //   commentForm.innerHTML = `<textarea name="comment" style="resize:none; width: 250px; height: 3em;" required></textarea>
-  //     <button type="button" name="save" title="Save comment"><i class="fa fa-check" aria-hidden="true"></i></button>
-  //     <button type="button" name="cancel" title="Cancel"><i class="fa fa-times" aria-hidden="true"></i></button>`;
-    
-  //   // trap all keyups inside commentForm
-  //   commentForm.addEventListener('keyup', evt => {
-  //     evt.stopPropagation();
-  //   });
-
-  //   // Special key handlers
-  //   commentForm.addEventListener('keydown', evt => {
-  //     // Save the comment if enter key is pressed.
-  //     // If shift key is held while pressing enter, start a newline.
-  //     if (evt.key === 'Enter' && !evt.shiftKey) {
-  //       evt.preventDefault();
-  //       save();
-  //     }
-
-  //     // If escape key is pressed, cancel submission.
-  //     if (evt.key === 'Escape') {
-  //       cancel();
-  //     }
-  //   });
-
-  //   const textarea = commentForm.querySelector('textarea');
-
-  //   commentForm.querySelector('button[name="save"]').addEventListener('click', evt => {
-  //     evt.stopPropagation();
-  //     save();
-  //   });
-
-  //   commentForm.querySelector('button[name="cancel"]').addEventListener('click', evt => {
-  //     evt.stopPropagation();
-  //     cancel();
-  //   });
-
-  //   return commentForm;
-
-  //   function save() {
-  //     commentForm.dispatchEvent(new CustomEvent('save', { detail: textarea.value, bubbles: true }));
-  //   }
-
-  //   function cancel() {
-  //     commentForm.dispatchEvent(new Event('cancel', { bubbles: true }));
-  //   }
-  // }
 
   // Returns a function, that, as long as it continues to be invoked, will not
   // be triggered. The function will be called after it stops being called for
