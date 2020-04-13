@@ -161,6 +161,8 @@
           } else if (evt.key === 'Z' && evt.shiftKey && evt.ctrlKey) {
             evt.preventDefault();
             redo();
+          } else if ((evt.key === 'Delete' || evt.key === 'Backspace') && (editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>')) {
+            evt.preventDefault();
           }
         }
 
