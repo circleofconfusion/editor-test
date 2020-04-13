@@ -75,7 +75,7 @@
         redoButton.addEventListener('click', redo);
         commentButton.addEventListener('click', insertComment);
         closeButton.addEventListener('click', closeEditor);
-        editor.addEventListener('focus', editorFocus);
+        editor.addEventListener('focusin', editorFocus);
         editor.addEventListener('blur', editorBlur);
         appEditor.addEventListener('keydown', handleKeydown);
         editor.addEventListener('keyup', debounce(handleEditorHtmlChange, 200));
@@ -133,9 +133,9 @@
           toolbar.style.visibility = 'visible';
 
           if (editor.innerHTML === DEFAULT_TEXT) {
-            editor.innerHTML = '';
-            // use execCommand so that the cursor is focused inside the paragraph
-            document.execCommand('insertHtml', false, '<p></p>');
+            const paragraph = editor.querySelector('p');
+            const selection = document.getSelection();
+            selection.selectAllChildren(paragraph);
           }
 
           refreshUi();

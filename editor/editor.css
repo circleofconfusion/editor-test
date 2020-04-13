@@ -42,7 +42,7 @@ app-editor > .toolbar > button {
   border-right: 1px solid var(--gray);
   background-color: white;
   color: black;
-  height: 1.6em;
+  height: 1.6em;  /* TODO: tweak this for Chrome */
 }
 
 app-editor > .toolbar > button:disabled {
@@ -72,7 +72,7 @@ app-editor > .heading > button {
   border-right: 1px solid var(--gray);
   border-left: 1px solid var(--gray);
   background-color: white;
-  height: 1.6em;
+  height: 1.6em; /* TODO: tweak this for Chrome */
 }
 
 app-editor .comment-form {
