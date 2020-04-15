@@ -35,7 +35,7 @@
         <h3>Comments</h3>
         <ul>
           <li ng-repeat="comment in editor.comments">
-            <app-comment comment-data="comment" highlight="model.highlightComment(commentId)" delete="model.deleteCommentHandler(sectionNumber, commentId)"></app-comment>
+            <app-comment comment-data="comment" highlight="model.highlightComment(commentId, highlight)" delete="model.deleteCommentHandler(sectionNumber, commentId)"></app-comment>
           </li>
         </ul>
       </aside>

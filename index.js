@@ -21,17 +21,15 @@ angular.module('editorTest',['ngSanitize'])
 
     function saveHandler(index, text) {
       model.data[index].text = text;
-      console.log(model.data);
     }
 
     function commentHandler(index, commentId, commentText) {
       model.data[index].comments.push({ markId: commentId, commentText});
       $scope.$apply();
-      console.log(model.data);
     }
 
-    function highlightComment(commentId) {
-      $scope.$broadcast('highlightComment', { commentId });
+    function highlightComment(commentId, highlight) {
+      $scope.$broadcast('highlightComment', { commentId, highlight });
     }
 
     function deleteCommentHandler(index, commentId) {

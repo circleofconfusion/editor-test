@@ -1,7 +1,8 @@
 <pre ng-bind="model.commentText" ng-if="!editing"></pre>
 <textarea ng-if="editing" ng-model="model.commentText"></textarea>
 <div>
-  <a href="" ng-click="model.onHighlight()" ng-if="model.onHighlight">Highlight</a>
+  <a href="" ng-click="model.onHighlight()" ng-if="model.highlighted === false && model.onHighlight">Highlight</a>
+  <a href="" ng-click="model.onHighlight()" ng-if="model.highlighted === true && model.onHighlight">Hide</a>
   <a href="" ng-click="model.onToggleEdit()" ng-if="model.onSaveEdit">Edit</a>
   <a href="" ng-click="model.onDelete()" ng-if="model.onDelete">Delete</a>
 </div>

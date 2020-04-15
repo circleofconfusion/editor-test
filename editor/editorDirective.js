@@ -101,7 +101,7 @@
         commentForm.addEventListener('keydown', commentFormSpecialKeys);
         saveCommentButton.addEventListener('click', saveComment);
         cancelCommentButton.addEventListener('click', cancelComment);
-        scope.$on('highlightComment', (evt, args) => highlightCommentMark(args.commentId));
+        scope.$on('highlightComment', (evt, args) => highlightCommentMark(args.commentId, args.highlight));
         scope.$on('deleteComment', (evt, args) => deleteCommentMark(args.commentId));
 
         //=====================================================================
@@ -369,14 +369,15 @@
          * Highlights the identified mark.
          * @param {String} commentId The comment ID used to identify the mark to highlight.
          */
-        function highlightCommentMark(commentId) {
-          console.log(commentId);
+        function highlightCommentMark(commentId, highlight) {
           // clear all existing highlights
           Array.from(editor.querySelectorAll('mark.highlight'))
             .forEach(m => m.classList.remove('highlight'));
-          // Add highlight class to identified mark
-          Array.from(editor.querySelectorAll(`mark[data-id="${commentId}"]`))
-            .forEach(m => m.classList.add('highlight'));
+          if (highlight) {
+            // Add highlight class to identified mark
+            Array.from(editor.querySelectorAll(`mark[data-id="${commentId}"]`))
+              .forEach(m => m.classList.add('highlight'));
+          }
         }
 
         /**

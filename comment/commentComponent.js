@@ -8,10 +8,11 @@
     },
     templateUrl: '/comment/comment.html',
     controllerAs: 'model',
-    controller: function() {
+    controller: ['$scope', function($scope) {
       const model = this;
 
       model.editing = false;
+      model.highlighted = false;
       const commentId = model.commentData.markId;
       model.commentText = model.commentData.commentText;
       model.commentEditedText = model.commentData.commentText;
@@ -20,13 +21,20 @@
       if (model.update) model.onSaveEdit = onSaveEdit;
       if (model.delete) model.onDelete = onDelete;
 
+      $scope.$on('highlightComment', (evt, args) => {
+        if (args.commentId !== commentId) {
+          model.highlighted = false;
+        }
+      });
+
       function onToggleEdit() {
         model.editing = !model.editing;
         if (!model.editing) model.commentEditedText = model.commentData.commentText;
       }
 
       function onHighlight() {
-        model.highlight({ commentId });
+        model.highlighted = !model.highlighted;
+        model.highlight({ commentId, highlight: model.highlighted });
       }
 
       function onSaveEdit() {
@@ -36,6 +44,6 @@
       function onDelete() {
         model.delete({ commentId });
       }
-    }
+    }]
   });
 })();
