@@ -283,19 +283,13 @@
           const commentId = Math.random().toString(36).substr(2, 9);
           
           // add a mark element to the text
-          // document.execCommand('insertHTML', false, `<mark data-id="${commentId}">${selection.toString()}</mark>`);
           const mark = document.createElement('mark');
           mark.setAttribute('data-id', commentId);
-          mark.appendChild(document.createTextNode(selection.toString()));
+          // Unfortunately can't use selection.toString() because Safari is behind the times as usual.
+          mark.appendChild(document.createTextNode(selection.getRangeAt(0).extractContents().textContent));
           
           range.deleteContents();
           range.insertNode(mark);
-          // range.collapse(true);
-          // range.insertNode(mark);
-          // range.setStartAfter(mark);
-          // range.collapse(true);
-          // selection.removeRange(range);
-          // selection.addRange(range);
 
           // need to do this before any other action so commentForm has offset dimensions > 0
           commentForm.style.display = 'grid';
@@ -343,7 +337,7 @@
          */
         function saveComment() {
           if (!commentForm.comment.value) return;
-          
+
           scope.onsavecomment({
             commentId: commentForm.commentId.value,
             commentText: commentForm.comment.value
