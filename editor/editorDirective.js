@@ -9,10 +9,12 @@
         onsave: '&',
         onsavecomment: '&',
         editorTitle: '@?',
-        closeable: '<?'
+        closeable: '<?',
+        highlightedComment: '<?',
+        deletedComment: '<?'
       },
       templateUrl: '/editor/editor.html',
-      link: function(scope, elem) {
+      link: function(scope, elem, attrs) {
         // Set all enter key presses to be new paragraphs
         document.execCommand('defaultParagraphSeparator', false, 'p');
 
@@ -22,6 +24,9 @@
 
         const DEFAULT_TEXT = '<p>Add text...</p>';
         const allowedEditorTags = ['p', 'mark'];
+        const allowedAttributes = {
+          'mark': [ 'data-id' ]
+        };
         
         // Shadow variable to run in parallel with the editor.innerHTML.
         // Represents the last known state of the editor element.
@@ -55,9 +60,9 @@
 
         // Set text into editor element, sanitizing first.
         if (scope.text === '' || scope.text === '<p></p>' || scope.text === '<p><br></p>') {
-          editorHTML = sanitizeHtml(DEFAULT_TEXT, { allowedTags: allowedEditorTags });
+          editorHTML = sanitizeHtml(DEFAULT_TEXT, { allowedTags: allowedEditorTags, allowedAttributes });
         } else {
-          editorHTML = sanitizeHtml(scope.text, { allowedTags: allowedEditorTags });
+          editorHTML = sanitizeHtml(scope.text, { allowedTags: allowedEditorTags, allowedAttributes });
         }
         
         editor.innerHTML = editorHTML;
@@ -65,6 +70,19 @@
         if (scope.closeable !== true) {
           closeButton.style.display = 'none';
         }
+
+        // watch the incoming highlightedComment and deletedComment properties and react as necessary
+        scope.$watch('highlightedComment', (commentId, oldCommentId) => {
+          if (commentId === undefined) {
+            Array.from(editor.querySelectorAll('mark.highlight')).forEach(m => m.classList.remove('highlight'));
+            return;
+          }
+
+          const oldMark = editor.querySelector(`mark[data-id="${oldCommentId}"]`);
+          const newMark = editor.querySelector(`mark[data-id="${commentId}"]`);
+          if (oldMark) oldMark.classList.toggle('highlight');
+          if (newMark) newMark.classList.toggle('highlight');
+        });
         
         //=====================================================================
         // Event Listeners
@@ -178,7 +196,7 @@
             evt.preventDefault();
             return;
           }
-          let value = sanitizeHtml(editor.innerHTML, { allowedTags: allowedEditorTags });
+          let value = sanitizeHtml(editor.innerHTML, { allowedTags: allowedEditorTags, allowedAttributes });
           if (value === DEFAULT_TEXT || value === '<p></p>' || value === '<p><br></p>') value = '';
           scope.onsave({ value });
         }
@@ -224,7 +242,7 @@
           if (editor.innerHTML !== editorHTML) {
             // push the new value to the undo stack
             undoStack.push(editorHTML);
-            editorHTML = sanitizeHtml(editor.innerHTML, { allowedTags: allowedEditorTags });
+            editorHTML = sanitizeHtml(editor.innerHTML, { allowedTags: allowedEditorTags, allowedAttributes });
             // since this is a new value, clear the redo stack
             redoStack = [];
           }

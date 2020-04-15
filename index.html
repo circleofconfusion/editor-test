@@ -3,37 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <title>Editor Test</title>
-  <link href="index.css" rel="stylesheet" type="text/css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-  <link href="editor/editor.css" rel="stylesheet" type="text/css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+  <link href="index.css" rel="stylesheet" type="text/css" />
+  <link href="editor/editor.css" rel="stylesheet" type="text/css" />
+  <link href="comment/comment.css" rel="stylesheet" type="text/css" />
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.11/angular.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-sanitize/1.5.11/angular-sanitize.min.js"></script>
-  <script src="node_modules/angular-animate/angular-animate.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/angular-uuid@0.0.4/angular-uuid.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap-tpls.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sanitize-html@1.22.1/dist/sanitize-html.min.js"></script>
   <script src="index.js"></script>
   <script src="editor/editorDirective.js"></script>
+  <script src="comment/commentComponent.js"></script>
 </head>
 <body>
-  <main ng-app="editorTest" ng-controller="main as model">
+  <header>
     <h1> Editor Test</h1>
-    <section>
-      <app-editor text="model.txt1"
-          editor-title="Editor 1"
-          onsave="model.saveHandler(value)"
-          onsavecomment="model.commentHandler(commentId, commentText)"
-          closeable="true"></app-editor>
-      <app-editor text="model.txt2"
-          editor-title="Editor 1"
-          onsave="model.saveHandler(value)"
-          onsavecomment="model.commentHandler(commentId, commentText)"></app-editor>
-    </section>
-    <section>
-
+  </header>
+  <main ng-app="editorTest" ng-controller="main as model">
+    <section ng-repeat="editor in model.data" ng-init="sectionNumber = $index">
+      <app-editor text="editor.text"
+          editor-title="Editor {{ $index + 1 }}"
+          onsave="model.saveHandler($index, value)"
+          onsavecomment="model.commentHandler($index, commentId, commentText)"
+          closeable="true"
+          highlighted-comment="model.highlightedComments[sectionNumber]"></app-editor>
+      <aside class="comments" ng-if="editor.comments.length > 0">
+        <h3>Comments</h3>
+        <ul>
+          <li ng-repeat="comment in editor.comments">
+            <app-comment comment-data="comment" highlight="model.highlightComment(sectionNumber, commentId)"></app-comment>
+          </li>
+        </ul>
+      </aside>
     </section>
   </main>
 </body>

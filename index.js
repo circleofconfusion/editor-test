@@ -1,19 +1,37 @@
 'use strict';
 angular.module('editorTest',['ngSanitize'])
-  .controller('main', [ function() {
+  .controller('main', [ '$scope', function($scope) {
     const model = this;
 
-    model.txt1 = '<p>foo</p>';
-    model.txt2 = '';
+    model.highlightedComments = [];
+    model.data = [
+      {
+        text: '',
+        comments: []
+      },
+      {
+        text: '',
+        comments: []
+      }
+    ];
     
     model.saveHandler = saveHandler;
     model.commentHandler = commentHandler;
+    model.highlightComment = highlightComment;
 
-    function saveHandler() {
-      console.log('saveHandler', arguments);
+    function saveHandler(index, text) {
+      model.data[index].text = text;
+      console.log(model.data);
     }
 
-    function commentHandler() {
-      console.log('commentHandler', arguments);
+    function commentHandler(index, commentId, commentText) {
+      model.data[index].comments.push({ markId: commentId, commentText});
+      $scope.$apply();
+      console.log(model.data);
+    }
+
+    function highlightComment(index, commentId) {
+      if (model.highlightedComments[index] !== commentId) model.highlightedComments[index] = commentId;
+      else model.highlightedComments[index] = undefined;
     }
   }]);

@@ -1,5 +1,22 @@
+header,
 main {
   max-width: 1000px;
   margin: 0 auto;
   padding: 5px;
+}
+
+section {
+  display: grid;
+  grid-gap: 15px;
+  grid-template-columns: 1fr 200px;
+}
+
+aside.comments > h3 {
+  margin-top: 0;
+}
+
+aside.comments > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }

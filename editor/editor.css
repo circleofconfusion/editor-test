@@ -13,7 +13,7 @@ app-editor > div[contenteditable] {
   border: 1px solid var(--gray);
   display: block;
   width: 100%;
-  min-height: 2.5em;
+  min-height: 10em;
 }
 
 app-editor > div[contenteditable]:focus {
@@ -21,6 +21,14 @@ app-editor > div[contenteditable]:focus {
 }
 
 app-editor > div[contenteditable] mark {
+  background-color: transparent;
+}
+
+app-editor > div[contenteditable] mark {
+  padding: 0;
+}
+
+app-editor > div[contenteditable] mark.highlight {
   background-color: var(--orange);
 }
 
