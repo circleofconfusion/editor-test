@@ -9,12 +9,10 @@
         onsave: '&',
         onsavecomment: '&',
         editorTitle: '@?',
-        closeable: '<?',
-        highlightedComment: '<?',
-        deletedComment: '<?'
+        closeable: '<?'
       },
       templateUrl: '/editor/editor.html',
-      link: function(scope, elem, attrs) {
+      link: function(scope, elem) {
         // Set all enter key presses to be new paragraphs
         document.execCommand('defaultParagraphSeparator', false, 'p');
 
@@ -72,17 +70,17 @@
         }
 
         // watch the incoming highlightedComment and deletedComment properties and react as necessary
-        scope.$watch('highlightedComment', (commentId, oldCommentId) => {
-          if (commentId === undefined) {
-            Array.from(editor.querySelectorAll('mark.highlight')).forEach(m => m.classList.remove('highlight'));
-            return;
-          }
+        // scope.$watch('highlightedComment', (commentId, oldCommentId) => {
+        //   if (commentId === undefined) {
+        //     Array.from(editor.querySelectorAll('mark.highlight')).forEach(m => m.classList.remove('highlight'));
+        //     return;
+        //   }
 
-          const oldMark = editor.querySelector(`mark[data-id="${oldCommentId}"]`);
-          const newMark = editor.querySelector(`mark[data-id="${commentId}"]`);
-          if (oldMark) oldMark.classList.toggle('highlight');
-          if (newMark) newMark.classList.toggle('highlight');
-        });
+        //   const oldMark = editor.querySelector(`mark[data-id="${oldCommentId}"]`);
+        //   const newMark = editor.querySelector(`mark[data-id="${commentId}"]`);
+        //   if (oldMark) oldMark.classList.toggle('highlight');
+        //   if (newMark) newMark.classList.toggle('highlight');
+        // });
         
         //=====================================================================
         // Event Listeners
@@ -103,6 +101,8 @@
         commentForm.addEventListener('keydown', commentFormSpecialKeys);
         saveCommentButton.addEventListener('click', saveComment);
         cancelCommentButton.addEventListener('click', cancelComment);
+        scope.$on('highlightComment', (evt, args) => highlightCommentMark(args.commentId));
+        scope.$on('deleteComment', (evt, args) => deleteCommentMark(args.commentId));
 
         //=====================================================================
         // Function definitions
@@ -360,13 +360,38 @@
          * Removes the <mark> tag from the editor.
          */
         function cancelComment() {
-          const mark = editor.querySelector(`mark[data-id="${commentForm.commentId.value}"]`);
-          const markParent = mark.parentElement;
-          const textNode = document.createTextNode(mark.innerHTML);
-          mark.parentElement.replaceChild(textNode, mark);
-          markParent.normalize();
+          deleteCommentMark(commentForm.commentId.value);
           hideCommentForm();
           refreshUi();
+        }
+        
+        /**
+         * Highlights the identified mark.
+         * @param {String} commentId The comment ID used to identify the mark to highlight.
+         */
+        function highlightCommentMark(commentId) {
+          console.log(commentId);
+          // clear all existing highlights
+          Array.from(editor.querySelectorAll('mark.highlight'))
+            .forEach(m => m.classList.remove('highlight'));
+          // Add highlight class to identified mark
+          Array.from(editor.querySelectorAll(`mark[data-id="${commentId}"]`))
+            .forEach(m => m.classList.add('highlight'));
+        }
+
+        /**
+         * Removes a mark tag identified by a commentId.
+         * @param {String} commentId The comment ID used to identify the mark to remove.
+         */
+        function deleteCommentMark(commentId) {
+          console.log(commentId)
+          const mark = editor.querySelector(`mark[data-id="${commentId}"]`);
+          if (mark) {
+            const markParent = mark.parentElement;
+            const textNode = document.createTextNode(mark.innerHTML);
+            mark.parentElement.replaceChild(textNode, mark);
+            markParent.normalize();
+          }
         }
 
         /**

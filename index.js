@@ -3,7 +3,6 @@ angular.module('editorTest',['ngSanitize'])
   .controller('main', [ '$scope', function($scope) {
     const model = this;
 
-    model.highlightedComments = [];
     model.data = [
       {
         text: '',
@@ -18,6 +17,7 @@ angular.module('editorTest',['ngSanitize'])
     model.saveHandler = saveHandler;
     model.commentHandler = commentHandler;
     model.highlightComment = highlightComment;
+    model.deleteCommentHandler = deleteCommentHandler;
 
     function saveHandler(index, text) {
       model.data[index].text = text;
@@ -30,8 +30,13 @@ angular.module('editorTest',['ngSanitize'])
       console.log(model.data);
     }
 
-    function highlightComment(index, commentId) {
-      if (model.highlightedComments[index] !== commentId) model.highlightedComments[index] = commentId;
-      else model.highlightedComments[index] = undefined;
+    function highlightComment(commentId) {
+      $scope.$broadcast('highlightComment', { commentId });
     }
+
+    function deleteCommentHandler(index, commentId) {
+      const commentIndex = model.data[index].comments.findIndex(c => c.commentId === commentId);
+      model.data[index].comments.splice(commentIndex, 1);
+      $scope.$broadcast('deleteComment', { commentId });
+    } 
   }]);
