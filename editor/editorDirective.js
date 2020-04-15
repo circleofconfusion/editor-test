@@ -342,6 +342,8 @@
          * Calls an injected onsavecomment function, passing the commentId and comment text.
          */
         function saveComment() {
+          if (!commentForm.comment.value) return;
+          
           scope.onsavecomment({
             commentId: commentForm.commentId.value,
             commentText: commentForm.comment.value
