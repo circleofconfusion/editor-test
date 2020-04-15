@@ -135,13 +135,7 @@
           }, 50);
 
           // enable/disable comment button
-          const selection = document.getSelection();
-          const selectionRange = selection.getRangeAt(0);
-          if (selection.anchorNode.parentElement.offsetParent === appEditor && selectionRange.startOffset < selectionRange.endOffset) {
-            commentButton.disabled = false;
-          } else {
-            commentButton.disabled = true;
-          }
+          commentButton.disabled = !commentEnabled();
         }
 
         /**
@@ -179,6 +173,9 @@
           } else if (evt.key === 'Z' && evt.shiftKey && evt.ctrlKey) {
             evt.preventDefault();
             redo();
+          } else if (evt.key === 'k' && evt.ctrlKey && commentEnabled()) {
+            evt.preventDefault();
+            insertComment();
           } else if ((evt.key === 'Delete' || evt.key === 'Backspace') && (editor.innerHTML === '<p></p>' || editor.innerHTML === '<p><br></p>')) {
             evt.preventDefault();
           }
@@ -272,6 +269,17 @@
           }
           refreshUi();
         }
+
+        /**
+         * Determines if the user is able to make a comment in the editor.
+         * There must be a selection inside the editor element, and it must be at least one character long.
+         */
+        function commentEnabled() {
+          const selection = document.getSelection();
+          const selectionRange = selection.getRangeAt(0);
+          return selection.anchorNode.parentElement.offsetParent === appEditor && selectionRange.startOffset < selectionRange.endOffset;
+        }
+
 
         /**
          * Adds a mark element around the current selection, and opens/initializes the comment form.
